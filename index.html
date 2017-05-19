@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <!-- jQuery, jQueryUI, D3 e C3 -->
+        <script src="./node_modules/jquery/dist/jquery.min.js"></script>
+        <script src="./node_modules/d3/d3.min.js"></script>
+        <script src="./node_modules/c3/c3.min.js"></script>
+        <link href="./node_modules/c3/c3.min.css" rel="stylesheet"></script>
+        <script src="./node_modules/jqueryui/jquery-ui.min.js"></script>
+        <link href="./node_modules/jqueryui/jquery-ui.min.css" rel="stylesheet"></link>
+        <!-- Tudo do Pivottable -->
+        <script src="./node_modules/pivottable/dist/pivot.min.js"></script>
+        <script src="./node_modules/pivottable/dist/pivot.pt.min.js"></script>
+        <script src="./node_modules/pivottable/dist/c3_renderers.min.js"></script>
+        <script src="./node_modules/pivottable/dist/d3_renderers.min.js"></script>
+        <script src="./node_modules/pivottable/dist/export_renderers.min.js"></script>
+        <link href="./node_modules/pivottable/dist/pivot.min.css" rel="stylesheet"></link>
+
+        <!-- Bootstrap -->
+        <script src="./node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+        <link href="./node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"></link>
+        <link href="./node_modules/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet"></link>
+        
+
+    </head>
+    <body>
+        <div class="container">
+            <div class="row" id="carregando">
+
+                <h1>Carregando...</h1>
+                <h3 id='texto-engracadinho-carregamento'>Ligando o motor...</h3>
+            </div>
+            <div id="areaDeComeco">
+            <div class="row">
+                <div class="col-md-12">
+                    <h2>Mais de 8000 Pedidos no Sistema</h2>
+                    <div id="pedidos-por-ano"></div>
+                </div>
+
+                <div class="col-md-12">
+                    <h2>Mais de 50 órgãos públicos por ano</h2>
+                    <div id="orgaos-publicos"></div>
+            
+                </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <h2>Você quer fazer suas próprias tabelas? Também tem como</h2>
+                    <p>Você pode fazer uma tabela dinâmica aqui mesmo, ver gráficos e até exportar para Excel os resultados (em formato TSV), se preferir</p>
+                    <p>Por exemplo, pedidos por ano, poder público, e status ao final do pedido</p>
+                    <div id="pivotinho"></div>
+                </div>
+
+            </div>
+            </div>
+        </div>
+
+        <script>
+            $('#areaDeComeco').hide();
+            pedidos = [];
+            function getRandomInt(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min)) + min;
+            }
+
+            setInterval(function() {
+                textos = ['Carregando a Rebimboca da Parafuseta', 'Ligando motores iônicos', 'Batendo dados no liquidifcador']
+                $('#texto-engracadinho-carregamento').hide();
+                $('#texto-engracadinho-carregamento').text( textos[getRandomInt(0, textos.length-1)]);
+                $('#texto-engracadinho-carregamento').show();
+            }, 3000);
+
+            var mostraDadosTudo = function (data) {
+                $('#carregando').hide();
+                $('#areaDeComeco').show();
+                var pedidos_por_ano = d3.nest().key(function(d) { return d.ano; }).rollup(function(v) { return v.length; }).entries(data);
+                pedidos_por_ano = pedidos_por_ano.filter(function (obj) {return obj.key!== 'nan'});
+                var chart_pedidos_por_ano = c3.generate({
+                    bindto: '#pedidos-por-ano',
+                    data: {
+                        json: pedidos_por_ano,
+                        keys: {
+                            x: 'key',
+                            value: ['values']
+                        },
+                        type: 'spline'   
+                    },
+                });
+                $('#orgaos-publicos').pivotUI(
+                    data,
+                    {
+                        rows: ["ano"],
+                        aggregatorName: 'Contagem de Valores únicos',
+                        vals: ["agente_nome",],                       
+                        renderers: $.extend( $.pivotUtilities.renderers,$.pivotUtilities.c3_renderers, $.pivotUtilities.d3_renderers, $.pivotUtilities.export_renderers),
+                        rendererName: 'Bar Chart',
+                    },
+                    false,
+                    "pt");
+                // var chart_poderes = c3.generate({
+                //     bindto: '#orgaos-publicos',
+                //     data: {
+                //         json: data,
+                //         keys: {
+                //             x: 'ano',
+                //             values: ['agente_Poder',]
+                //         },
+                //         type: 'bar'
+                //     },
+                // });
+                $("#pivotinho").pivotUI(
+                    data,
+                    {
+                        rows: ["ano", "agente_Poder", "status_final_pedido_nome"],
+                        cols: ["agente_Nivel_Federativo",],
+                        renderers: $.extend( $.pivotUtilities.renderers,$.pivotUtilities.c3_renderers, $.pivotUtilities.d3_renderers, $.pivotUtilities.export_renderers)
+                    },
+                    false,
+                    "pt");
+            };
+            // pedidos = [];
+            $.getJSON("./pedidos.json", function(data) {
+                mostraDadosTudo(data);
+                pedidos = data;
+            });
+            
+
+        </script>
+    </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "c3": "^0.4.11",
+    "datalib": "^1.7.3",
+    "jqueryui": "^1.11.1",
+    "pivottable": "^2.13.0"
+  }
+}
